@@ -55,6 +55,13 @@ def create_parser():
         action='version',
         version=sqlparse.__version__)
 
+    parser.add_argument(
+        '--update_in_place',
+        dest='update_in_place',
+        default=False,
+        action='store_true',
+        help='Apply formatting updates to the passed filename (default False)')
+
     group = parser.add_argument_group('Formatting Options')
 
     group.add_argument(
@@ -195,6 +202,9 @@ def main(args=None):
         return _error(u'Invalid options: {0}'.format(e))
 
     s = sqlparse.format(data, **formatter_opts)
+    if args.update_in_place:
+        with open(args.filename, 'w', args.encoding) as f:
+            f.writelines(s)
     stream.write(s)
     stream.flush()
     if close_stream:
