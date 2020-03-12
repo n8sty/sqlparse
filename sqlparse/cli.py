@@ -44,23 +44,25 @@ def create_parser():
 
     parser.add_argument('filename')
 
-    parser.add_argument(
+    file_group = parser.add_mutually_exclusive_group()
+
+    file_group.add_argument(
         '-o', '--outfile',
         dest='outfile',
         metavar='FILE',
         help='write output to FILE (defaults to stdout)')
 
+    file_group.add_argument(
+        '--in_place',
+        dest='in_place',
+        default=False,
+        action='store_true',
+        help='Apply formatting updates directly to the specified file (default False)')
+
     parser.add_argument(
         '--version',
         action='version',
         version=sqlparse.__version__)
-
-    parser.add_argument(
-        '--update_in_place',
-        dest='update_in_place',
-        default=False,
-        action='store_true',
-        help='Apply formatting updates directly to the specified file (default False)')
 
     group = parser.add_argument_group('Formatting Options')
 
@@ -169,6 +171,8 @@ def main(args=None):
     args = parser.parse_args(args)
 
     if args.filename == '-':  # read from stdin
+        if args.in_place:
+            return _error(u'Cannot update stdin in-place')
         if PY2:
             data = getreader(args.encoding)(sys.stdin).read()
         else:
@@ -186,9 +190,9 @@ def main(args=None):
                 u'Failed to read {0}: {1}'.format(args.filename, e))
 
     close_stream = False
-    if args.outfile:
+    if args.outfile or args.in_place:
         try:
-            stream = open(args.outfile, 'w', args.encoding)
+            stream = open(args.outfile or args.filename, 'w', args.encoding)
             close_stream = True
         except IOError as e:
             return _error(u'Failed to open {0}: {1}'.format(args.outfile, e))
@@ -202,9 +206,6 @@ def main(args=None):
         return _error(u'Invalid options: {0}'.format(e))
 
     s = sqlparse.format(data, **formatter_opts)
-    if args.update_in_place:
-        with open(args.filename, 'w', args.encoding) as f:
-            f.writelines(s)
     stream.write(s)
     stream.flush()
     if close_stream:
