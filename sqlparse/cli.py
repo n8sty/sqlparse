@@ -60,7 +60,7 @@ def create_parser():
         dest='update_in_place',
         default=False,
         action='store_true',
-        help='Apply formatting updates to the passed filename (default False)')
+        help='Apply formatting updates directly to the specified file (default False)')
 
     group = parser.add_argument_group('Formatting Options')
 
